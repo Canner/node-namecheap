@@ -1,7 +1,9 @@
-var parser = require('xmlparser'),
-    request = require('request'),
+var Promise= require('bluebird'),
+    parseString = Promise.promisify(require('xml2js').parseString),
+    rp = require('request-promise'),
     qs = require('querystring'),
-    util = require('util');
+    util = require('util')
+    _= require('lodash');
 
 var namecheap = function(api_user, api_key, client_ip, sandbox) {
     this.api_user = this.username = api_user;
@@ -477,7 +479,36 @@ namecheap.prototype = {
                     callback = code;
                 else
                     params.PromotionCode = code;
-                return instance.command('users.getPricing', params, callback);
+                return instance.command('users.getPricing', params);
+            },
+            getOneYearRegisterPrice: function () {
+                return this.getPricing({ DOMAIN: 'REGISTER' })
+                .then(function (res) {
+                    var products= res.UserGetPricingResult[0].ProductType[0].ProductCategory;
+                    return _.chain(products)
+                    .find(function (product) {
+                        return product.$.Name=="register";
+                    })
+                    .get("Product")
+                    // get 1Y prices
+                    .map(function (product) {
+                        var price= _.find(product.Price, function (domain) {
+                            return parseInt(domain.$.Duration)==1;
+                        })
+
+                        if(!price)
+                            return { name: product.$.Name }
+                        var yourprice= parseFloat(price.$.YourPrice);
+                        if(price.$.YourAdditonalCost)
+                            yourprice += parseFloat(price.$.YourAdditonalCost);
+
+                        return {
+                            name: product.$.Name,
+                            price: yourprice
+                        }
+                    })
+                    .value();
+                })
             },
             login: function(password, callback) {
                 if(!password)
@@ -589,21 +620,22 @@ namecheap.prototype = {
             options.body = params;
         else*/
             options.uri += '?' + params;
-        request(options, function(err, res, body) {
-            if (err) {
-                return callback(err);
+        return rp(options)
+        .then(function (body) {
+            return parseString(body);
+        })
+        .then(function (body) {
+            if(body.ApiResponse.$.Status=="ERROR"){
+                var code= body.ApiResponse.Errors[0].Error[0].$.Number;
+                var msg= body.ApiResponse.Errors[0].Error[0]._;
+                var error= new Error(msg);
+                error.code= code;
+                throw error;
             }
 
-            body = parser.parser(body);
-            err = body.ApiResponse.Errors.Error;
-            res = body.ApiResponse.CommandResponse;
-            err = err ? { code : err.Number, message: err.$t } : undefined;
-            if (res && res.Type) {
-                delete res.Type;
-            }
-            callback && callback(err, res ? res[Object.keys(res)[0]] : null);
-        });
-        return this;
+            res = body.ApiResponse.CommandResponse[0];
+            return res;
+        })
     }
 };
 
