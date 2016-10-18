@@ -2,8 +2,8 @@ var Promise= require('bluebird'),
     parseString = Promise.promisify(require('xml2js').parseString),
     rp = require('request-promise'),
     qs = require('querystring'),
-    util = require('util')
-    _= require('lodash');
+    util = require('util'),
+    _ = require('lodash');
 
 var namecheap = function(api_user, api_key, client_ip, sandbox) {
     this.api_user = this.username = api_user;
