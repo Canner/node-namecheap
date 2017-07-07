@@ -1,6 +1,6 @@
 {
   "author": "Chad Smith <chad@nospam.me> (http://twitter.com/chadsmith)",
-  "name": "namecheap",
+  "name": "@canner/namecheap",
   "description": "Node.js library for the NameCheap API",
   "keywords": [
     "namecheap",
@@ -9,10 +9,10 @@
     "whois"
   ],
   "version": "0.0.1",
-  "homepage": "https://github.com/chadsmith/node-namecheap",
+  "homepage": "https://github.com/Canner/node-namecheap",
   "repository": {
     "type": "git",
-    "url": "git://github.com/chadsmith/node-namecheap.git"
+    "url": "git://github.com/Canner/node-namecheap.git"
   },
   "engines": {
     "node": ">= v0.4.0"
